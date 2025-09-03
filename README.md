@@ -59,8 +59,8 @@ Word Morph is an interactive web application that transforms simple text input i
 ### Installation
 1. **Download**: Clone or download the repository
    ```bash
-   git clone https://github.com/yourusername/word-morph.git
-   cd word-morph
+   git clone https://github.com/Hardik-369/Word-Morph.git
+   cd Word-Morph
    ```
 
 2. **Run**: Simply open the HTML file
@@ -215,12 +215,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact & Support
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/yourusername/word-morph/issues)
-- **LinkedIn**: [Connect with the creator](https://linkedin.com/in/yourprofile)
-- **Demo**: [Try it live](./word-morph.html)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/Hardik-369/Word-Morph/issues)
+- **LinkedIn**: [Connect with the creator](https://www.linkedin.com/in/hardikkawale/)
+- **Demo**: [Try it live](https://word-morph.vercel.app/)
 
 ---
 
 ⭐ **Star this repo** if Word Morph brought some joy to your day!
 
-**Built with ❤️ and lots of ☕ by [Your Name]**
+
+**Built with ❤️ and lots of ☕ by [Hardik Kawale]**
