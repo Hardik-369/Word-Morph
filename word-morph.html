@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Morph - Interactive Text Animation</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .letter {
+            display: inline-block;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .letter:hover {
+            transform: scale(1.1) rotate(1deg);
+        }
+        
+        .letter.clickable:hover {
+            transform: scale(1.2) rotate(3deg);
+            text-shadow: 0 0 15px currentColor;
+        }
+        
+        .letter.dragging {
+            z-index: 100;
+            transform: scale(1.3) rotate(5deg);
+            opacity: 0.8;
+            pointer-events: none;
+        }
+        
+        .letter.typing-preview {
+            opacity: 0.6;
+            transform: scale(0.9);
+            animation: typePreview 0.3s ease-in-out;
+        }
+        
+        @keyframes typePreview {
+            0% { transform: scale(1.2); opacity: 0.3; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+        
+        .letter.clicked {
+            animation: letterClick 0.4s ease-out;
+        }
+        
+        @keyframes letterClick {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5) rotate(15deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        
+        .input-typing {
+            animation: inputPulse 0.1s ease-in-out;
+        }
+        
+        @keyframes inputPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        .gesture-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+        
+        .gesture-trail {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle, rgba(139, 69, 19, 0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: gestureTrail 1s ease-out forwards;
+        }
+        
+        @keyframes gestureTrail {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(3); }
+        }
+        
+        .letter.exploding {
+            position: absolute;
+            z-index: 10;
+        }
+        
+        .letter.settling {
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .morphing-container {
+            position: relative;
+            overflow: hidden;
+            min-height: 200px;
+        }
+        
+        .input-glow:focus {
+            box-shadow: 0 0 20px rgba(139, 69, 19, 0.3);
+        }
+        
+        .rainbow-trail {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        .floating-emoji {
+            position: absolute;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 15;
+            animation: floatUp 2s ease-out forwards;
+        }
+        
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-100px) scale(1.5); }
+        }
+        
+        .wobbly {
+            animation: wobble 0.5s ease-in-out;
+        }
+        
+        @keyframes wobble {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+        
+        .spinning {
+            animation: spin 1s linear;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .bouncy {
+            animation: bounce 0.6s ease-in-out;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .fun-fact {
+            animation: slideInRight 0.5s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .combo-badge {
+            animation: comboPopIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes comboPopIn {
+            0% { transform: scale(0) rotate(180deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        
+        .achievement-popup {
+            animation: achievementSlide 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        @keyframes achievementSlide {
+            0% { transform: translateX(300px) scale(0.8); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
+        }
+        
+        .level-up {
+            animation: levelUpPulse 1s ease-in-out;
+        }
+        
+        @keyframes levelUpPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
+        }
+        
+        .challenge-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .challenge-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .glow-effect {
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { box-shadow: 0 0 20px rgba(139, 69, 19, 0.3); }
+            to { box-shadow: 0 0 30px rgba(139, 69, 19, 0.8), 0 0 40px rgba(139, 69, 19, 0.3); }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-pink-200 via-purple-200 to-indigo-300 flex items-center justify-center p-4">
+    <div class="w-full max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-4 drop-shadow-lg">
+                Word Morph
+            </h1>
+            <p class="text-lg md:text-xl text-gray-700 font-medium">
+                Type text to see letters explode and reassemble with physics magic ✨
+            </p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="bg-white/20 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl">
+            <!-- Game Stats Row -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white/30 rounded-lg p-3 text-center">
+                    <div class="text-2xl font-bold text-purple-600" id="userLevel">1</div>
+                    <div class="text-xs text-gray-600">Level</div>
+                </div>
+                <div class="bg-white/30 rounded-lg p-3 text-center">
+                    <div class="text-2xl font-bold text-green-600" id="totalScore">0</div>
+                    <div class="text-xs text-gray-600">Score</div>
+                </div>
+                <div class="bg-white/30 rounded-lg p-3 text-center">
+                    <div class="text-2xl font-bold text-blue-600" id="wordsCompleted">0</div>
+                    <div class="text-xs text-gray-600">Words</div>
+                </div>
+                <div class="bg-white/30 rounded-lg p-3 text-center">
+                    <div class="text-2xl font-bold text-orange-600" id="timeBonus">0</div>
+                    <div class="text-xs text-gray-600">Speed Bonus</div>
+                </div>
+            </div>
+            
+            <!-- XP Progress Bar -->
+            <div class="mb-4">
+                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                    <span>Progress to Level <span id="nextLevel">2</span></span>
+                    <span><span id="currentXP">0</span>/<span id="requiredXP">100</span> XP</span>
+                </div>
+                <div class="bg-gray-300 rounded-full h-3 overflow-hidden">
+                    <div id="xpProgressBar" class="progress-bar bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input 
+                    type="text" 
+                    id="textInput" 
+                    placeholder="Type your text here..."
+                    class="flex-1 px-6 py-4 text-xl font-semibold text-gray-800 bg-white/80 rounded-xl border-2 border-purple-200 focus:border-purple-400 focus:outline-none input-glow transition-all duration-300"
+                    maxlength="50"
+                />
+                <button 
+                    id="morphButton"
+                    class="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg rounded-xl hover:from-purple-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-200 shadow-lg"
+                >
+                    Morph! ✨
+                </button>
+                <button 
+                    id="resetButton"
+                    class="px-6 py-4 bg-gradient-to-r from-gray-400 to-gray-500 text-white font-bold text-lg rounded-xl hover:from-gray-500 hover:to-gray-600 transform hover:scale-105 transition-all duration-200 shadow-lg"
+                >
+                    Reset 🔄
+                </button>
+            </div>
+        </div>
+        
+        <!-- Daily Challenges -->
+        <div id="challengeSection" class="bg-white/20 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                🎯 Daily Challenges
+                <span class="ml-2 text-sm bg-yellow-400 text-yellow-800 px-2 py-1 rounded-full">+XP</span>
+            </h3>
+            <div id="challengesList" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Challenges will be populated here -->
+            </div>
+        </div>
+
+        <!-- Display Area -->
+        <div class="bg-white/30 backdrop-blur-sm rounded-2xl p-8 shadow-xl relative">
+            <!-- Gesture Detection Area -->
+            <div id="gestureArea" class="gesture-area"></div>
+            
+            <!-- Real-time Typing Preview -->
+            <div id="typingPreview" class="absolute top-2 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-purple-600 opacity-0 transition-opacity duration-300">
+                <!-- Live preview will appear here -->
+            </div>
+            
+            <!-- Interactive Controls -->
+            <div class="absolute top-4 left-4 flex gap-2">
+                <button id="shakeButton" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded-lg text-sm font-bold transition-all duration-200 hover:scale-105">
+                    🥤 Shake
+                </button>
+                <button id="danceButton" class="bg-pink-500 hover:bg-pink-600 text-white px-3 py-1 rounded-lg text-sm font-bold transition-all duration-200 hover:scale-105">
+                    💃 Dance
+                </button>
+                <button id="magnetButton" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold transition-all duration-200 hover:scale-105">
+                    🧲 Magnet
+                </button>
+            </div>
+            
+            <!-- Achievements Popup -->
+            <div id="achievementPopup" class="achievement-popup absolute top-4 right-4 hidden z-20">
+                <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-xl shadow-lg">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl" id="achievementIcon">🏆</span>
+                        <div>
+                            <div class="font-bold text-sm" id="achievementTitle">Achievement Unlocked!</div>
+                            <div class="text-xs" id="achievementDesc">You're awesome!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Combo Counter -->
+            <div id="comboCounter" class="absolute bottom-4 left-4 hidden">
+                <div class="combo-badge bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-full font-bold text-sm shadow-lg">
+                    🔥 <span id="comboCount">0</span>x COMBO!
+                </div>
+            </div>
+            
+            <!-- Score Popup -->
+            <div id="scorePopup" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 hidden z-30">
+                <div class="bg-green-500 text-white px-8 py-4 rounded-2xl font-bold text-3xl shadow-xl">
+                    +<span id="scoreAmount">0</span> XP!
+                </div>
+            </div>
+            
+            <div 
+                id="displayContainer" 
+                class="morphing-container text-center min-h-[200px] flex items-center justify-center"
+            >
+                <div id="textDisplay" class="text-4xl md:text-6xl font-bold text-gray-800">
+                    Welcome
+                </div>
+            </div>
+            
+            <!-- Interactive Letter Palette -->
+            <div id="letterPalette" class="mt-6 hidden">
+                <div class="text-center mb-2 text-sm text-gray-600">Click letters to add them:</div>
+                <div class="flex flex-wrap justify-center gap-2" id="paletteLetters">
+                    <!-- Letters will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Fun Facts Display -->
+            <div id="funFactContainer" class="mt-6 min-h-[60px] flex items-center justify-center">
+                <div id="funFact" class="text-sm md:text-base text-purple-700 font-medium text-center px-4 py-2 bg-white/50 rounded-lg hidden fun-fact cursor-pointer hover:bg-white/70 transition-all duration-200">
+                    💡 Ready for some word magic?
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="text-center mt-6 text-gray-600">
+            <p class="text-sm">
+                🖱️ Click letters • 🖐️ Drag letters to input • ✋ Draw gestures • 🎨 Use letter palette • 🎵 Sound ON!
+            </p>
+            <div class="mt-2 flex justify-center gap-4 text-xs">
+                <span>👆 Click interactions</span>
+                <span>🎭 Letter animations</span>
+                <span>✨ Gesture controls</span>
+                <span>🎯 Real-time preview</span>
+            </div>
+            <div class="mt-2 text-xs text-purple-600">
+                💡 Try: Swipe up/down for effects • Tap for explosions • Right-click letters for surprises!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class Letter {
+            constructor(char, x, y, targetX, targetY, element) {
+                this.char = char;
+                this.x = x;
+                this.y = y;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.vx = (Math.random() - 0.5) * 20; // Random velocity
+                this.vy = (Math.random() - 0.5) * 20;
+                this.element = element;
+                this.isExploding = false;
+                this.isSettling = false;
+                this.gravity = 0.5;
+                this.bounce = 0.8;
+                this.friction = 0.99;
+                this.personality = this.assignPersonality();
+                this.lastTrailTime = 0;
+            }
+            
+            assignPersonality() {
+                const personalities = ['wobbly', 'spinning', 'bouncy'];
+                return personalities[Math.floor(Math.random() * personalities.length)];
+            }
+
+            updatePhysics(containerWidth, containerHeight) {
+                if (!this.isExploding) return;
+
+                // Apply gravity
+                this.vy += this.gravity;
+                
+                // Apply friction
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+
+                // Update position
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Create rainbow trail
+                if (Date.now() - this.lastTrailTime > 50) {
+                    this.createRainbowTrail();
+                    this.lastTrailTime = Date.now();
+                }
+
+                // Bounce off container walls
+                if (this.x <= 0 || this.x >= containerWidth - 30) {
+                    this.vx *= -this.bounce;
+                    this.x = Math.max(0, Math.min(containerWidth - 30, this.x));
+                    this.playBounceSound();
+                }
+
+                if (this.y <= 0 || this.y >= containerHeight - 50) {
+                    this.vy *= -this.bounce;
+                    this.y = Math.max(0, Math.min(containerHeight - 50, this.y));
+                    this.playBounceSound();
+                }
+
+                // Update element position
+                this.element.style.left = this.x + 'px';
+                this.element.style.top = this.y + 'px';
+            }
+            
+            createRainbowTrail() {
+                const trail = document.createElement('div');
+                trail.className = 'rainbow-trail';
+                const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
+                trail.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                trail.style.left = (this.x + 15) + 'px';
+                trail.style.top = (this.y + 25) + 'px';
+                
+                document.getElementById('displayContainer').appendChild(trail);
+                
+                setTimeout(() => {
+                    trail.style.opacity = '0';
+                    trail.style.transform = 'scale(0)';
+                }, 10);
+                
+                setTimeout(() => {
+                    if (trail.parentNode) {
+                        trail.parentNode.removeChild(trail);
+                    }
+                }, 500);
+            }
+            
+            playBounceSound() {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.frequency.setValueAtTime(200 + Math.random() * 300, context.currentTime);
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.1, context.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.1);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 0.1);
+            }
+
+            explode() {
+                this.isExploding = true;
+                this.element.classList.add('exploding');
+                this.element.style.position = 'absolute';
+                this.element.style.zIndex = '10';
+                
+                // Add personality-based animation
+                this.element.classList.add(this.personality);
+                
+                // Add explosion force
+                this.vx = (Math.random() - 0.5) * 30;
+                this.vy = (Math.random() - 0.5) * 30 - 10; // Upward bias
+                
+                // Play explosion sound
+                this.playExplosionSound();
+            }
+            
+            playExplosionSound() {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.frequency.setValueAtTime(800, context.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(200, context.currentTime + 0.2);
+                oscillator.type = 'sawtooth';
+                
+                gainNode.gain.setValueAtTime(0.2, context.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.2);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 0.2);
+            }
+
+            settle() {
+                this.isExploding = false;
+                this.isSettling = true;
+                this.element.classList.remove('exploding');
+                this.element.classList.add('settling');
+                this.element.style.position = 'relative';
+                this.element.style.left = '0px';
+                this.element.style.top = '0px';
+                this.element.style.zIndex = '1';
+            }
+        }
+
+        class WordMorph {
+            constructor() {
+                this.textInput = document.getElementById('textInput');
+                this.morphButton = document.getElementById('morphButton');
+                this.resetButton = document.getElementById('resetButton');
+                this.displayContainer = document.getElementById('displayContainer');
+                this.textDisplay = document.getElementById('textDisplay');
+                this.funFact = document.getElementById('funFact');
+                this.comboCounter = document.getElementById('comboCounter');
+                this.comboCount = document.getElementById('comboCount');
+                
+                // Game elements
+                this.userLevel = document.getElementById('userLevel');
+                this.totalScore = document.getElementById('totalScore');
+                this.wordsCompleted = document.getElementById('wordsCompleted');
+                this.timeBonus = document.getElementById('timeBonus');
+                this.currentXP = document.getElementById('currentXP');
+                this.requiredXP = document.getElementById('requiredXP');
+                this.nextLevel = document.getElementById('nextLevel');
+                this.xpProgressBar = document.getElementById('xpProgressBar');
+                this.achievementPopup = document.getElementById('achievementPopup');
+                this.scorePopup = document.getElementById('scorePopup');
+                this.challengesList = document.getElementById('challengesList');
+                
+                this.currentLetters = [];
+                this.animationFrame = null;
+                this.isAnimating = false;
+                this.morphCount = 0;
+                this.lastMorphTime = Date.now();
+                
+                // Game state
+                this.gameState = {
+                    level: 1,
+                    xp: 0,
+                    score: 0,
+                    wordsCompleted: 0,
+                    timeBonus: 0,
+                    achievements: [],
+                    completedChallenges: []
+                };
+                
+                this.loadGameState();
+                
+                this.funFacts = [
+                    "💡 The word 'alphabet' comes from the first two Greek letters: alpha and beta!",
+                    "🌈 Did you know? The shortest word with all 5 vowels is 'eunoia' (goodwill)!",
+                    "🚀 The word 'set' has the most different meanings in English - over 430!",
+                    "💙 'Pneumonoultramicroscopicsilicovolcanoconiosis' is the longest word in English!",
+                    "✨ Shakespeare invented over 1,700 words including 'eyeball' and 'fashionable'!",
+                    "📚 The word 'bookkeeper' is the only English word with three consecutive double letters!",
+                    "🔥 'Stewardesses' is the longest word you can type with only your left hand!",
+                    "🎨 The word 'orange' doesn't rhyme with any other English word!",
+                    "🐝 'Buzz' is an onomatopoeia - a word that sounds like what it describes!",
+                    "🎭 The word 'drama' comes from Greek meaning 'to do' or 'to act'!"
+                ];
+                
+                this.achievements = [
+                    { id: 'first_morph', title: 'First Steps', desc: 'Complete your first morph', icon: '👶', xp: 50 },
+                    { id: 'combo_master', title: 'Combo Master', desc: 'Reach a 5x combo', icon: '🔥', xp: 100 },
+                    { id: 'speed_demon', title: 'Speed Demon', desc: 'Morph within 3 seconds', icon: '⚡', xp: 75 },
+                    { id: 'word_wizard', title: 'Word Wizard', desc: 'Complete 25 words', icon: '🧙', xp: 200 },
+                    { id: 'level_up', title: 'Rising Star', desc: 'Reach level 5', icon: '⬆️', xp: 150 },
+                    { id: 'secret_words', title: 'Secret Keeper', desc: 'Discover secret words', icon: '🔮', xp: 300 },
+                    { id: 'challenge_complete', title: 'Challenge Accepted', desc: 'Complete a daily challenge', icon: '🎯', xp: 125 }
+                ];
+                
+                this.dailyChallenges = [
+                    { id: 'animals', title: 'Animal Kingdom', desc: 'Type 5 animal names', progress: 0, target: 5, xp: 150, keywords: ['cat', 'dog', 'bird', 'fish', 'lion', 'tiger', 'bear', 'wolf', 'fox', 'deer'] },
+                    { id: 'colors', title: 'Rainbow Master', desc: 'Type 3 color names', progress: 0, target: 3, xp: 100, keywords: ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink', 'black', 'white', 'gray'] },
+                    { id: 'long_words', title: 'Wordsmith', desc: 'Type words with 8+ letters', progress: 0, target: 3, xp: 200, keywords: [] }
+                ];
+                
+                this.init();
+            }
+
+            init() {
+                // Event listeners
+                this.morphButton.addEventListener('click', () => this.morphText());
+                this.resetButton.addEventListener('click', () => this.resetText());
+                this.textInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        this.morphText();
+                    }
+                });
+                
+                // Real-time typing preview
+                this.textInput.addEventListener('input', (e) => this.showTypingPreview(e.target.value));
+                this.textInput.addEventListener('keydown', () => this.textInput.classList.add('input-typing'));
+                this.textInput.addEventListener('keyup', () => {
+                    setTimeout(() => this.textInput.classList.remove('input-typing'), 100);
+                });
+                
+                // Interactive button listeners
+                document.getElementById('shakeButton').addEventListener('click', () => this.shakeLetters());
+                document.getElementById('danceButton').addEventListener('click', () => this.danceLetters());
+                document.getElementById('magnetButton').addEventListener('click', () => this.magnetEffect());
+                
+                // Gesture detection
+                this.initGestureDetection();
+                
+                // Letter click interactions
+                this.displayContainer.addEventListener('click', (e) => this.handleLetterClick(e));
+                
+                // Drag and drop
+                this.initDragAndDrop();
+                
+                // Fun fact interactions
+                this.funFact.addEventListener('click', () => this.showRandomFunFact());
+
+                // Initialize game UI
+                this.updateGameUI();
+                this.generateDailyChallenges();
+                this.createLetterPalette();
+                
+                // Initialize with welcome text
+                this.createLetterSpans('Welcome');
+                
+                // Auto-save game state periodically
+                setInterval(() => this.saveGameState(), 30000);
+            }
+            
+            loadGameState() {
+                const saved = localStorage.getItem('wordMorphGame');
+                if (saved) {
+                    this.gameState = { ...this.gameState, ...JSON.parse(saved) };
+                }
+                
+                // Load daily challenges
+                const savedChallenges = localStorage.getItem('wordMorphChallenges');
+                if (savedChallenges) {
+                    const challengeData = JSON.parse(savedChallenges);
+                    const today = new Date().toDateString();
+                    if (challengeData.date === today) {
+                        this.dailyChallenges = challengeData.challenges;
+                    }
+                }
+            }
+            
+            saveGameState() {
+                localStorage.setItem('wordMorphGame', JSON.stringify(this.gameState));
+                
+                // Save daily challenges
+                const challengeData = {
+                    date: new Date().toDateString(),
+                    challenges: this.dailyChallenges
+                };
+                localStorage.setItem('wordMorphChallenges', JSON.stringify(challengeData));
+            }
+            
+            updateGameUI() {
+                this.userLevel.textContent = this.gameState.level;
+                this.totalScore.textContent = this.gameState.score;
+                this.wordsCompleted.textContent = this.gameState.wordsCompleted;
+                this.timeBonus.textContent = this.gameState.timeBonus;
+                this.currentXP.textContent = this.gameState.xp;
+                
+                const requiredXP = this.getRequiredXP(this.gameState.level);
+                this.requiredXP.textContent = requiredXP;
+                this.nextLevel.textContent = this.gameState.level + 1;
+                
+                const progress = (this.gameState.xp / requiredXP) * 100;
+                this.xpProgressBar.style.width = Math.min(progress, 100) + '%';
+                
+                if (progress >= 100) {
+                    this.levelUp();
+                }
+            }
+            
+            getRequiredXP(level) {
+                return level * 100 + (level - 1) * 50;
+            }
+            
+            levelUp() {
+                this.gameState.level++;
+                this.gameState.xp = 0;
+                
+                // Level up effects
+                this.userLevel.classList.add('level-up');
+                setTimeout(() => this.userLevel.classList.remove('level-up'), 1000);
+                
+                this.showAchievement('Level Up!', `Welcome to level ${this.gameState.level}!`, '⬆️');
+                this.playLevelUpSound();
+                
+                // Check level achievements
+                if (this.gameState.level === 5) {
+                    this.unlockAchievement('level_up');
+                }
+                
+                this.updateGameUI();
+            }
+            
+            generateDailyChallenges() {
+                this.challengesList.innerHTML = '';
+                
+                this.dailyChallenges.forEach(challenge => {
+                    const challengeCard = document.createElement('div');
+                    challengeCard.className = 'challenge-card bg-white/50 rounded-lg p-4 border-2 border-transparent hover:border-purple-300';
+                    
+                    const isCompleted = challenge.progress >= challenge.target;
+                    const progressPercent = (challenge.progress / challenge.target) * 100;
+                    
+                    challengeCard.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-gray-800">${challenge.title}</h4>
+                            <span class="text-2xl">${isCompleted ? '✅' : '🎯'}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-3">${challenge.desc}</p>
+                        <div class="mb-2">
+                            <div class="bg-gray-200 rounded-full h-2 overflow-hidden">
+                                <div class="progress-bar bg-gradient-to-r from-green-400 to-blue-500 h-full rounded-full" style="width: ${progressPercent}%"></div>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>${challenge.progress}/${challenge.target}</span>
+                                <span>+${challenge.xp} XP</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    if (isCompleted) {
+                        challengeCard.classList.add('opacity-75');
+                    }
+                    
+                    this.challengesList.appendChild(challengeCard);
+                });
+            }
+
+            createLetterSpans(text) {
+                this.textDisplay.innerHTML = '';
+                this.currentLetters = [];
+
+                if (!text.trim()) {
+                    this.textDisplay.innerHTML = '<span class="text-gray-400">Type something above...</span>';
+                    return;
+                }
+
+                const words = text.split(' ');
+                words.forEach((word, wordIndex) => {
+                    if (wordIndex > 0) {
+                        // Add space between words
+                        const spaceSpan = document.createElement('span');
+                        spaceSpan.textContent = '\u00A0'; // Non-breaking space
+                        spaceSpan.className = 'letter';
+                        this.textDisplay.appendChild(spaceSpan);
+                    }
+
+                    // Create spans for each letter
+                    for (let i = 0; i < word.length; i++) {
+                        const span = document.createElement('span');
+                        span.textContent = word[i];
+                        span.className = 'letter clickable text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600';
+                        span.setAttribute('data-letter', word[i]);
+                        span.setAttribute('draggable', 'true');
+                        this.textDisplay.appendChild(span);
+                        
+                        const rect = span.getBoundingClientRect();
+                        const containerRect = this.displayContainer.getBoundingClientRect();
+                        
+                        const letter = new Letter(
+                            word[i],
+                            rect.left - containerRect.left,
+                            rect.top - containerRect.top,
+                            rect.left - containerRect.left,
+                            rect.top - containerRect.top,
+                            span
+                        );
+                        
+                        this.currentLetters.push(letter);
+                    }
+                });
+            }
+            
+            showTypingPreview(text) {
+                const preview = document.getElementById('typingPreview');
+                if (text.trim()) {
+                    preview.textContent = text;
+                    preview.style.opacity = '1';
+                    preview.classList.add('typing-preview');
+                    
+                    setTimeout(() => {
+                        preview.classList.remove('typing-preview');
+                    }, 300);
+                } else {
+                    preview.style.opacity = '0';
+                }
+            }
+            
+            handleLetterClick(e) {
+                if (e.target.classList.contains('letter') && e.target.textContent.trim()) {
+                    e.target.classList.add('clicked');
+                    
+                    // Play click sound
+                    this.playClickSound();
+                    
+                    // Add letter to input
+                    this.textInput.value += e.target.textContent;
+                    this.showTypingPreview(this.textInput.value);
+                    
+                    // Remove animation class after animation
+                    setTimeout(() => {
+                        e.target.classList.remove('clicked');
+                    }, 400);
+                    
+                    // Add some score for interaction
+                    this.addScore(5);
+                }
+            }
+            
+            initDragAndDrop() {
+                this.displayContainer.addEventListener('dragstart', (e) => {
+                    if (e.target.classList.contains('letter')) {
+                        e.target.classList.add('dragging');
+                        e.dataTransfer.setData('text/plain', e.target.textContent);
+                    }
+                });
+                
+                this.displayContainer.addEventListener('dragend', (e) => {
+                    if (e.target.classList.contains('letter')) {
+                        e.target.classList.remove('dragging');
+                    }
+                });
+                
+                this.textInput.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.textInput.classList.add('glow-effect');
+                });
+                
+                this.textInput.addEventListener('dragleave', () => {
+                    this.textInput.classList.remove('glow-effect');
+                });
+                
+                this.textInput.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const letter = e.dataTransfer.getData('text/plain');
+                    this.textInput.value += letter;
+                    this.textInput.classList.remove('glow-effect');
+                    this.showTypingPreview(this.textInput.value);
+                    this.addScore(10); // Bonus for drag and drop
+                });
+            }
+            
+            initGestureDetection() {
+                let isDrawing = false;
+                let gesturePoints = [];
+                const gestureArea = document.getElementById('gestureArea');
+                
+                gestureArea.style.pointerEvents = 'auto';
+                
+                gestureArea.addEventListener('mousedown', (e) => {
+                    isDrawing = true;
+                    gesturePoints = [{x: e.clientX, y: e.clientY}];
+                });
+                
+                gestureArea.addEventListener('mousemove', (e) => {
+                    if (isDrawing) {
+                        gesturePoints.push({x: e.clientX, y: e.clientY});
+                        this.createGestureTrail(e.clientX, e.clientY);
+                    }
+                });
+                
+                gestureArea.addEventListener('mouseup', () => {
+                    if (isDrawing) {
+                        isDrawing = false;
+                        this.analyzeGesture(gesturePoints);
+                        gesturePoints = [];
+                    }
+                });
+                
+                // Touch support
+                gestureArea.addEventListener('touchstart', (e) => {
+                    const touch = e.touches[0];
+                    isDrawing = true;
+                    gesturePoints = [{x: touch.clientX, y: touch.clientY}];
+                    e.preventDefault();
+                });
+                
+                gestureArea.addEventListener('touchmove', (e) => {
+                    if (isDrawing) {
+                        const touch = e.touches[0];
+                        gesturePoints.push({x: touch.clientX, y: touch.clientY});
+                        this.createGestureTrail(touch.clientX, touch.clientY);
+                    }
+                    e.preventDefault();
+                });
+                
+                gestureArea.addEventListener('touchend', () => {
+                    if (isDrawing) {
+                        isDrawing = false;
+                        this.analyzeGesture(gesturePoints);
+                        gesturePoints = [];
+                    }
+                });
+            }
+            
+            createGestureTrail(x, y) {
+                const trail = document.createElement('div');
+                trail.className = 'gesture-trail';
+                trail.style.left = (x - 5) + 'px';
+                trail.style.top = (y - 5) + 'px';
+                
+                document.body.appendChild(trail);
+                
+                setTimeout(() => {
+                    if (trail.parentNode) {
+                        trail.parentNode.removeChild(trail);
+                    }
+                }, 1000);
+            }
+            
+            analyzeGesture(points) {
+                if (points.length < 5) return;
+                
+                const startPoint = points[0];
+                const endPoint = points[points.length - 1];
+                const deltaX = endPoint.x - startPoint.x;
+                const deltaY = endPoint.y - startPoint.y;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                if (distance < 50) {
+                    // Tap or small circle - trigger special effect
+                    this.triggerGestureEffect('tap');
+                } else if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    if (deltaX > 0) {
+                        // Swipe right - next fun fact
+                        this.triggerGestureEffect('swipe-right');
+                    } else {
+                        // Swipe left - previous fun fact
+                        this.triggerGestureEffect('swipe-left');
+                    }
+                } else {
+                    if (deltaY > 0) {
+                        // Swipe down - shake letters
+                        this.triggerGestureEffect('swipe-down');
+                    } else {
+                        // Swipe up - dance letters
+                        this.triggerGestureEffect('swipe-up');
+                    }
+                }
+            }
+            
+            triggerGestureEffect(gesture) {
+                switch(gesture) {
+                    case 'tap':
+                        this.createClickExplosion();
+                        break;
+                    case 'swipe-right':
+                        this.showRandomFunFact();
+                        break;
+                    case 'swipe-left':
+                        this.showRandomFunFact();
+                        break;
+                    case 'swipe-down':
+                        this.shakeLetters();
+                        break;
+                    case 'swipe-up':
+                        this.danceLetters();
+                        break;
+                }
+                
+                this.addScore(15); // Bonus for gesture interaction
+            }
+            
+            shakeLetters() {
+                this.currentLetters.forEach((letter, index) => {
+                    setTimeout(() => {
+                        letter.element.classList.add('shake');
+                        setTimeout(() => {
+                            letter.element.classList.remove('shake');
+                        }, 500);
+                    }, index * 50);
+                });
+                this.playShakeSound();
+            }
+            
+            danceLetters() {
+                this.currentLetters.forEach((letter, index) => {
+                    setTimeout(() => {
+                        const danceClass = ['wobbly', 'spinning', 'bouncy'][index % 3];
+                        letter.element.classList.add(danceClass);
+                        setTimeout(() => {
+                            letter.element.classList.remove(danceClass);
+                        }, 1000);
+                    }, index * 100);
+                });
+                this.playDanceSound();
+            }
+            
+            magnetEffect() {
+                const centerX = this.displayContainer.offsetWidth / 2;
+                const centerY = this.displayContainer.offsetHeight / 2;
+                
+                this.currentLetters.forEach((letter, index) => {
+                    setTimeout(() => {
+                        const rect = letter.element.getBoundingClientRect();
+                        const containerRect = this.displayContainer.getBoundingClientRect();
+                        const letterX = rect.left - containerRect.left;
+                        const letterY = rect.top - containerRect.top;
+                        
+                        const deltaX = centerX - letterX;
+                        const deltaY = centerY - letterY;
+                        
+                        letter.element.style.transition = 'transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                        letter.element.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.2)`;
+                        
+                        setTimeout(() => {
+                            letter.element.style.transform = 'translate(0, 0) scale(1)';
+                        }, 800);
+                    }, index * 50);
+                });
+                this.playMagnetSound();
+            }
+            
+            createLetterPalette() {
+                const palette = document.getElementById('paletteLetters');
+                const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+                
+                letters.forEach(letter => {
+                    const letterSpan = document.createElement('span');
+                    letterSpan.textContent = letter;
+                    letterSpan.className = 'letter clickable bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 hover:scale-110';
+                    letterSpan.addEventListener('click', () => {
+                        this.textInput.value += letter.toLowerCase();
+                        this.showTypingPreview(this.textInput.value);
+                        letterSpan.classList.add('clicked');
+                        setTimeout(() => letterSpan.classList.remove('clicked'), 400);
+                        this.addScore(3);
+                    });
+                    palette.appendChild(letterSpan);
+                });
+                
+                // Show/hide palette toggle
+                const toggleButton = document.createElement('button');
+                toggleButton.textContent = '🎹 Letter Palette';
+                toggleButton.className = 'bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold transition-all duration-200 hover:scale-105 mb-4';
+                toggleButton.addEventListener('click', () => {
+                    const paletteContainer = document.getElementById('letterPalette');
+                    paletteContainer.classList.toggle('hidden');
+                    toggleButton.textContent = paletteContainer.classList.contains('hidden') ? '🎹 Show Palette' : '🙈 Hide Palette';
+                });
+                
+                document.getElementById('letterPalette').parentNode.insertBefore(toggleButton, document.getElementById('letterPalette'));
+            }
+            
+            createClickExplosion() {
+                const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
+                const container = this.displayContainer;
+                
+                for (let i = 0; i < 20; i++) {
+                    const particle = document.createElement('div');
+                    particle.style.position = 'absolute';
+                    particle.style.left = (container.offsetWidth / 2) + 'px';
+                    particle.style.top = (container.offsetHeight / 2) + 'px';
+                    particle.style.width = '8px';
+                    particle.style.height = '8px';
+                    particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    particle.style.borderRadius = '50%';
+                    particle.style.pointerEvents = 'none';
+                    particle.style.zIndex = '25';
+                    particle.style.transition = 'all 1s ease-out';
+                    
+                    container.appendChild(particle);
+                    
+                    const angle = (Math.random() * Math.PI * 2);
+                    const distance = 50 + Math.random() * 100;
+                    
+                    setTimeout(() => {
+                        particle.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(0)`;
+                        particle.style.opacity = '0';
+                    }, 10);
+                    
+                    setTimeout(() => {
+                        if (particle.parentNode) {
+                            particle.parentNode.removeChild(particle);
+                        }
+                    }, 1000);
+                }
+            }
+            
+            playClickSound() {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.frequency.setValueAtTime(800, context.currentTime);
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.1, context.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.1);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 0.1);
+            }
+            
+            playShakeSound() {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                for (let i = 0; i < 3; i++) {
+                    const oscillator = context.createOscillator();
+                    const gainNode = context.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(context.destination);
+                    
+                    oscillator.frequency.setValueAtTime(400 + i * 200, context.currentTime + i * 0.1);
+                    oscillator.type = 'square';
+                    
+                    gainNode.gain.setValueAtTime(0.05, context.currentTime + i * 0.1);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + i * 0.1 + 0.1);
+                    
+                    oscillator.start(context.currentTime + i * 0.1);
+                    oscillator.stop(context.currentTime + i * 0.1 + 0.1);
+                }
+            }
+            
+            playDanceSound() {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const notes = [261.63, 293.66, 329.63, 349.23, 392.00]; // C D E F G
+                
+                notes.forEach((freq, i) => {
+                    const oscillator = context.createOscillator();
+                    const gainNode = context.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(context.destination);
+                    
+                    oscillator.frequency.setValueAtTime(freq, context.currentTime + i * 0.2);
+                    oscillator.type = 'triangle';
+                    
+                    gainNode.gain.setValueAtTime(0.1, context.currentTime + i * 0.2);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + i * 0.2 + 0.2);
+                    
+                    oscillator.start(context.currentTime + i * 0.2);
+                    oscillator.stop(context.currentTime + i * 0.2 + 0.2);
+                });
+            }
+            
+            playMagnetSound() {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.frequency.setValueAtTime(100, context.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(1000, context.currentTime + 0.5);
+                oscillator.type = 'sawtooth';
+                
+                gainNode.gain.setValueAtTime(0.2, context.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 0.5);
+            }
+
+            morphText() {
+                if (this.isAnimating) return;
+
+                const newText = this.textInput.value.trim();
+                if (!newText) {
+                    this.resetText();
+                    return;
+                }
+
+                this.isAnimating = true;
+                const currentTime = Date.now();
+                const timeDiff = currentTime - this.lastMorphTime;
+                this.lastMorphTime = currentTime;
+                this.morphCount++;
+                
+                // Calculate score based on word length and speed
+                let baseScore = newText.length * 10;
+                let speedBonus = 0;
+                
+                if (timeDiff < 3000) { // Speed bonus for quick typing
+                    speedBonus = Math.max(50 - Math.floor(timeDiff / 100), 10);
+                    this.gameState.timeBonus += speedBonus;
+                    
+                    if (timeDiff < 3000 && !this.gameState.achievements.includes('speed_demon')) {
+                        this.unlockAchievement('speed_demon');
+                    }
+                }
+                
+                const totalScore = baseScore + speedBonus;
+                this.addScore(totalScore);
+                this.gameState.wordsCompleted++;
+                
+                // Check for secret words
+                this.checkSecretWords(newText.toLowerCase());
+                
+                // Check challenge progress
+                this.updateChallengeProgress(newText.toLowerCase());
+                
+                // Check achievements
+                this.checkAchievements();
+
+                // Show emoji reaction
+                this.showEmojiReaction();
+                
+                // Update combo counter
+                this.updateCombo();
+                
+                // Show fun fact
+                this.showRandomFunFact();
+                
+                // Update UI
+                this.updateGameUI();
+
+                // Phase 1: Explode current letters
+                this.explodeCurrentLetters();
+
+                // Phase 2: After explosion, settle into new text
+                setTimeout(() => {
+                    this.settleIntoNewText(newText);
+                }, 1500); // Let explosion run for 1.5 seconds
+            }
+            
+            checkSecretWords(word) {
+                const secretWords = ['rainbow', 'explosion', 'magic', 'wizard', 'sparkle', 'unicorn', 'dragon', 'phoenix'];
+                if (secretWords.includes(word)) {
+                    this.addScore(500);
+                    this.showSpecialEffect(word);
+                    if (!this.gameState.achievements.includes('secret_words')) {
+                        this.unlockAchievement('secret_words');
+                    }
+                }
+            }
+            
+            showSpecialEffect(word) {
+                if (word === 'rainbow') {
+                    this.createMassiveRainbowExplosion();
+                } else if (word === 'explosion') {
+                    this.createChainExplosion();
+                } else if (word === 'magic') {
+                    this.createMagicSparkles();
+                }
+            }
+            
+            updateChallengeProgress(word) {
+                this.dailyChallenges.forEach(challenge => {
+                    if (challenge.progress >= challenge.target) return;
+                    
+                    let progressMade = false;
+                    
+                    if (challenge.id === 'animals' && challenge.keywords.includes(word)) {
+                        challenge.progress++;
+                        progressMade = true;
+                    } else if (challenge.id === 'colors' && challenge.keywords.includes(word)) {
+                        challenge.progress++;
+                        progressMade = true;
+                    } else if (challenge.id === 'long_words' && word.length >= 8) {
+                        challenge.progress++;
+                        progressMade = true;
+                    }
+                    
+                    if (progressMade) {
+                        if (challenge.progress >= challenge.target) {
+                            this.addScore(challenge.xp);
+                            this.showAchievement('Challenge Complete!', challenge.title, '🎯');
+                            if (!this.gameState.achievements.includes('challenge_complete')) {
+                                this.unlockAchievement('challenge_complete');
+                            }
+                        }
+                        this.generateDailyChallenges();
+                    }
+                });
+            }
+            
+            addScore(points) {
+                this.gameState.score += points;
+                this.gameState.xp += points;
+                this.showScorePopup(points);
+            }
+            
+            showScorePopup(points) {
+                const scoreAmount = document.getElementById('scoreAmount');
+                scoreAmount.textContent = points;
+                this.scorePopup.classList.remove('hidden');
+                this.scorePopup.style.animation = 'none';
+                setTimeout(() => {
+                    this.scorePopup.style.animation = 'floatUp 1s ease-out forwards';
+                }, 10);
+                
+                setTimeout(() => {
+                    this.scorePopup.classList.add('hidden');
+                }, 1000);
+            }
+            
+            checkAchievements() {
+                if (this.morphCount === 1 && !this.gameState.achievements.includes('first_morph')) {
+                    this.unlockAchievement('first_morph');
+                }
+                
+                if (this.morphCount >= 5 && !this.gameState.achievements.includes('combo_master')) {
+                    this.unlockAchievement('combo_master');
+                }
+                
+                if (this.gameState.wordsCompleted >= 25 && !this.gameState.achievements.includes('word_wizard')) {
+                    this.unlockAchievement('word_wizard');
+                }
+            }
+            
+            unlockAchievement(achievementId) {
+                const achievement = this.achievements.find(a => a.id === achievementId);
+                if (achievement && !this.gameState.achievements.includes(achievementId)) {
+                    this.gameState.achievements.push(achievementId);
+                    this.addScore(achievement.xp);
+                    this.showAchievement(achievement.title, achievement.desc, achievement.icon);
+                    this.playAchievementSound();
+                }
+            }
+            
+            showAchievement(title, desc, icon) {
+                document.getElementById('achievementTitle').textContent = title;
+                document.getElementById('achievementDesc').textContent = desc;
+                document.getElementById('achievementIcon').textContent = icon;
+                
+                this.achievementPopup.classList.remove('hidden');
+                this.achievementPopup.style.animation = 'none';
+                setTimeout(() => {
+                    this.achievementPopup.style.animation = 'achievementSlide 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                }, 10);
+                
+                setTimeout(() => {
+                    this.achievementPopup.classList.add('hidden');
+                }, 4000);
+            }
+            
+            playAchievementSound() {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.frequency.setValueAtTime(440, context.currentTime);
+                oscillator.frequency.setValueAtTime(880, context.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(1320, context.currentTime + 0.2);
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, context.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 0.5);
+            }
+            
+            playLevelUpSound() {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                
+                for (let i = 0; i < 5; i++) {
+                    const oscillator = context.createOscillator();
+                    const gainNode = context.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(context.destination);
+                    
+                    oscillator.frequency.setValueAtTime(220 + i * 110, context.currentTime + i * 0.1);
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.2, context.currentTime + i * 0.1);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + i * 0.1 + 0.2);
+                    
+                    oscillator.start(context.currentTime + i * 0.1);
+                    oscillator.stop(context.currentTime + i * 0.1 + 0.2);
+                }
+            }
+            
+            showEmojiReaction() {
+                const emojis = ['😄', '😂', '🤩', '😍', '🥰', '😎', '😱', '🤯', '😲', '😅'];
+                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+                
+                const emojiElement = document.createElement('div');
+                emojiElement.textContent = emoji;
+                emojiElement.className = 'floating-emoji';
+                emojiElement.style.left = (Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.1) + 'px';
+                emojiElement.style.top = window.innerHeight * 0.3 + 'px';
+                
+                document.body.appendChild(emojiElement);
+                
+                setTimeout(() => {
+                    if (emojiElement.parentNode) {
+                        emojiElement.parentNode.removeChild(emojiElement);
+                    }
+                }, 2000);
+            }
+            
+            updateCombo() {
+                if (this.morphCount > 1) {
+                    this.comboCounter.classList.remove('hidden');
+                    this.comboCount.textContent = this.morphCount;
+                    
+                    // Add combo animation
+                    this.comboCounter.style.animation = 'none';
+                    setTimeout(() => {
+                        this.comboCounter.style.animation = 'comboPopIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+                    }, 10);
+                }
+            }
+            
+            showRandomFunFact() {
+                const fact = this.funFacts[Math.floor(Math.random() * this.funFacts.length)];
+                this.funFact.textContent = fact;
+                this.funFact.classList.remove('hidden');
+                
+                // Re-trigger animation
+                this.funFact.style.animation = 'none';
+                setTimeout(() => {
+                    this.funFact.style.animation = 'slideInRight 0.5s ease-out';
+                }, 10);
+                
+                // Hide after 4 seconds
+                setTimeout(() => {
+                    this.funFact.classList.add('hidden');
+                }, 4000);
+            }
+
+            explodeCurrentLetters() {
+                const containerRect = this.displayContainer.getBoundingClientRect();
+                
+                this.currentLetters.forEach(letter => {
+                    const rect = letter.element.getBoundingClientRect();
+                    letter.x = rect.left - containerRect.left;
+                    letter.y = rect.top - containerRect.top;
+                    letter.explode();
+                });
+
+                // Start physics animation
+                this.startPhysicsAnimation();
+            }
+
+            startPhysicsAnimation() {
+                const animate = () => {
+                    const containerRect = this.displayContainer.getBoundingClientRect();
+                    
+                    this.currentLetters.forEach(letter => {
+                        letter.updatePhysics(containerRect.width, containerRect.height);
+                    });
+
+                    if (this.isAnimating) {
+                        this.animationFrame = requestAnimationFrame(animate);
+                    }
+                };
+                
+                animate();
+            }
+
+            settleIntoNewText(newText) {
+                // Stop physics animation
+                if (this.animationFrame) {
+                    cancelAnimationFrame(this.animationFrame);
+                }
+
+                // Clean up old letters
+                this.currentLetters.forEach(letter => {
+                    if (letter.element.parentNode) {
+                        letter.element.style.transition = 'all 0.5s ease';
+                        letter.element.style.opacity = '0';
+                        letter.element.style.transform = 'scale(0)';
+                        setTimeout(() => {
+                            if (letter.element.parentNode) {
+                                letter.element.parentNode.removeChild(letter.element);
+                            }
+                        }, 500);
+                    }
+                });
+
+                // Create new text with entrance animation
+                setTimeout(() => {
+                    this.createLetterSpans(newText);
+                    
+                    // Animate letters in
+                    this.currentLetters.forEach((letter, index) => {
+                        letter.element.style.opacity = '0';
+                        letter.element.style.transform = 'scale(0) rotate(180deg)';
+                        
+                        setTimeout(() => {
+                            letter.element.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                            letter.element.style.opacity = '1';
+                            letter.element.style.transform = 'scale(1) rotate(0deg)';
+                        }, index * 100);
+                    });
+
+                    setTimeout(() => {
+                        this.isAnimating = false;
+                    }, this.currentLetters.length * 100 + 600);
+                }, 300);
+            }
+
+            resetText() {
+                if (this.animationFrame) {
+                    cancelAnimationFrame(this.animationFrame);
+                }
+                
+                this.isAnimating = false;
+                this.textInput.value = '';
+                this.morphCount = 0;
+                this.comboCounter.classList.add('hidden');
+                this.funFact.classList.add('hidden');
+                
+                // Reset all game progress to level 1
+                this.gameState = {
+                    level: 1,
+                    xp: 0,
+                    score: 0,
+                    wordsCompleted: 0,
+                    timeBonus: 0,
+                    achievements: [],
+                    completedChallenges: []
+                };
+                
+                // Reset daily challenges progress
+                this.dailyChallenges.forEach(challenge => {
+                    challenge.progress = 0;
+                });
+                
+                // Update UI to reflect reset
+                this.updateGameUI();
+                this.generateDailyChallenges();
+                
+                // Clear saved game state
+                localStorage.removeItem('wordMorphGame');
+                localStorage.removeItem('wordMorphChallenges');
+                
+                // Show reset confirmation
+                this.showAchievement('Game Reset!', 'Starting fresh from Level 1', '🔄');
+                this.playResetSound();
+                
+                // Fade out current letters
+                this.currentLetters.forEach((letter, index) => {
+                    setTimeout(() => {
+                        letter.element.style.transition = 'all 0.3s ease';
+                        letter.element.style.opacity = '0';
+                        letter.element.style.transform = 'scale(0)';
+                    }, index * 50);
+                });
+
+                setTimeout(() => {
+                    this.createLetterSpans('Welcome');
+                    
+                    // Animate welcome text in
+                    this.currentLetters.forEach((letter, index) => {
+                        letter.element.style.opacity = '0';
+                        letter.element.style.transform = 'scale(0)';
+                        
+                        setTimeout(() => {
+                            letter.element.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                            letter.element.style.opacity = '1';
+                            letter.element.style.transform = 'scale(1)';
+                        }, index * 100);
+                    });
+                }, 500);
+            }
+            
+            playResetSound() {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Play a descending scale to indicate reset
+                const notes = [880, 783.99, 659.25, 523.25, 440]; // A5 to A4
+                
+                notes.forEach((freq, i) => {
+                    const oscillator = context.createOscillator();
+                    const gainNode = context.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(context.destination);
+                    
+                    oscillator.frequency.setValueAtTime(freq, context.currentTime + i * 0.15);
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.15, context.currentTime + i * 0.15);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + i * 0.15 + 0.3);
+                    
+                    oscillator.start(context.currentTime + i * 0.15);
+                    oscillator.stop(context.currentTime + i * 0.15 + 0.3);
+                });
+            }
+            
+            createMassiveRainbowExplosion() {
+                const container = document.getElementById('displayContainer');
+                for (let i = 0; i < 100; i++) {
+                    setTimeout(() => {
+                        const x = Math.random() * container.offsetWidth;
+                        const y = Math.random() * container.offsetHeight;
+                        createRainbowExplosion(x, y);
+                    }, i * 20);
+                }
+            }
+            
+            createChainExplosion() {
+                const container = document.getElementById('displayContainer');
+                const explosions = 10;
+                
+                for (let i = 0; i < explosions; i++) {
+                    setTimeout(() => {
+                        const x = (container.offsetWidth / explosions) * i + Math.random() * 100;
+                        const y = container.offsetHeight / 2 + Math.random() * 100 - 50;
+                        
+                        // Create explosion with sound
+                        this.createVisualExplosion(x, y);
+                        this.playExplosionChainSound(i);
+                    }, i * 200);
+                }
+            }
+            
+            createMagicSparkles() {
+                const container = document.getElementById('displayContainer');
+                
+                for (let i = 0; i < 50; i++) {
+                    setTimeout(() => {
+                        const sparkle = document.createElement('div');
+                        sparkle.textContent = '✨';
+                        sparkle.style.position = 'absolute';
+                        sparkle.style.left = Math.random() * container.offsetWidth + 'px';
+                        sparkle.style.top = Math.random() * container.offsetHeight + 'px';
+                        sparkle.style.fontSize = (Math.random() * 20 + 10) + 'px';
+                        sparkle.style.pointerEvents = 'none';
+                        sparkle.style.zIndex = '25';
+                        sparkle.style.animation = 'floatUp 2s ease-out forwards';
+                        
+                        container.appendChild(sparkle);
+                        
+                        setTimeout(() => {
+                            if (sparkle.parentNode) {
+                                sparkle.parentNode.removeChild(sparkle);
+                            }
+                        }, 2000);
+                    }, i * 50);
+                }
+            }
+            
+            createVisualExplosion(x, y) {
+                const container = document.getElementById('displayContainer');
+                const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
+                
+                for (let i = 0; i < 12; i++) {
+                    const particle = document.createElement('div');
+                    particle.style.position = 'absolute';
+                    particle.style.left = x + 'px';
+                    particle.style.top = y + 'px';
+                    particle.style.width = '8px';
+                    particle.style.height = '8px';
+                    particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    particle.style.borderRadius = '50%';
+                    particle.style.pointerEvents = 'none';
+                    particle.style.zIndex = '20';
+                    particle.style.transition = 'all 1s ease-out';
+                    particle.style.boxShadow = '0 0 10px currentColor';
+                    
+                    container.appendChild(particle);
+                    
+                    const angle = (i / 12) * Math.PI * 2;
+                    const distance = 80 + Math.random() * 40;
+                    
+                    setTimeout(() => {
+                        particle.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(0)`;
+                        particle.style.opacity = '0';
+                    }, 10);
+                    
+                    setTimeout(() => {
+                        if (particle.parentNode) {
+                            particle.parentNode.removeChild(particle);
+                        }
+                    }, 1000);
+                }
+            }
+            
+            playExplosionChainSound(index) {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.frequency.setValueAtTime(800 + index * 100, context.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(200, context.currentTime + 0.3);
+                oscillator.type = 'sawtooth';
+                
+                gainNode.gain.setValueAtTime(0.15, context.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.3);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 0.3);
+            }
+        }
+
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new WordMorph();
+        });
+
+        // Add some extra flair with particle effects on hover
+        document.addEventListener('mousemove', (e) => {
+            if (Math.random() > 0.98) { // More frequent for extra fun
+                createMouseParticle(e.clientX, e.clientY);
+            }
+        });
+
+        function createMouseParticle(x, y) {
+            const particle = document.createElement('div');
+            particle.style.position = 'fixed';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            particle.style.width = '6px';
+            particle.style.height = '6px';
+            const colors = ['#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#EF4444'];
+            particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            particle.style.borderRadius = '50%';
+            particle.style.pointerEvents = 'none';
+            particle.style.zIndex = '1000';
+            particle.style.transition = 'all 1s ease-out';
+            particle.style.boxShadow = '0 0 10px currentColor';
+            
+            document.body.appendChild(particle);
+            
+            setTimeout(() => {
+                particle.style.opacity = '0';
+                particle.style.transform = `translate(${(Math.random() - 0.5) * 200}px, ${(Math.random() - 0.5) * 200}px) scale(0)`;
+            }, 10);
+            
+            setTimeout(() => {
+                if (particle.parentNode) {
+                    particle.parentNode.removeChild(particle);
+                }
+            }, 1000);
+        }
+        
+        // Add secret keyboard shortcuts for extra fun
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                // Rainbow explosion!
+                const container = document.getElementById('displayContainer');
+                for (let i = 0; i < 50; i++) {
+                    setTimeout(() => {
+                        const x = Math.random() * container.offsetWidth;
+                        const y = Math.random() * container.offsetHeight;
+                        createRainbowExplosion(x, y);
+                    }, i * 50);
+                }
+            }
+        });
+        
+        function createRainbowExplosion(x, y) {
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd', '#98fb98', '#ffa07a'];
+            
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'absolute';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.width = '12px';
+                particle.style.height = '12px';
+                particle.style.backgroundColor = colors[i];
+                particle.style.borderRadius = '50%';
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '20';
+                particle.style.transition = 'all 1.5s ease-out';
+                particle.style.boxShadow = '0 0 15px currentColor';
+                
+                document.getElementById('displayContainer').appendChild(particle);
+                
+                const angle = (i / 8) * Math.PI * 2;
+                const distance = 100 + Math.random() * 100;
+                
+                setTimeout(() => {
+                    particle.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(0)`;
+                    particle.style.opacity = '0';
+                }, 10);
+                
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, 1500);
+            }
+        }
+    </script>
+</body>
+</html>
